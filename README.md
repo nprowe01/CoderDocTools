@@ -2,6 +2,10 @@ Master branch: ![Build status](https://travis-ci.org/borjafdezgauna/CoderDocTool
 
 Develop branch: ![Build status](https://travis-ci.org/borjafdezgauna/CoderDocTools.svg?branch=develop)
 
+# This fork
+
+I tend to use tables within my markdown pages which the original build doesn't support so I'm adding that. Also I'm using a later version of Visual Studio & .NET.
+
 # About this project
 This project features some tools I wrote to make documenting code a bit easier:
 
