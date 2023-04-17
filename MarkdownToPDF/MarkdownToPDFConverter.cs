@@ -282,7 +282,22 @@ namespace MarkdownToPDF
 
             return docName;
         }
-
+        bool inHeader = true;
+        public void ParseTableLine(string line)
+        {
+            if (line.StartsWith("| --"))
+            {
+                inHeader = false;
+            }
+            else {
+                string[] splitParts = line.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                m_wikiPDFDocument.AddStringToTable(splitParts[0], true, splitParts.Length, inHeader);
+                for (int i = 1; i < splitParts.Length; i++)
+                {
+                    m_wikiPDFDocument.AddStringToTable(splitParts[i], false, splitParts.Length, inHeader);
+                }
+            }
+        }
         int CountSpacesAtBeginning(string line)
         {
             int i = 0;
@@ -290,7 +305,6 @@ namespace MarkdownToPDF
                 i++;
             return i;
         }
-
         private string InputFolder;
         public void Convert(string inputMarkdownFolder, string markdownDocFilename, string outputHtmlFolder)
         {
@@ -336,19 +350,34 @@ namespace MarkdownToPDF
 
                 if (trimmedLine.Length > 0)
                 {
-                    SetParagraphTypeByLineStart(ref trimmedLine, numIndents);
-
-                    if (trimmedLine != null)
+                    if (trimmedLine.StartsWith("| "))
                     {
-                        if (!m_wikiPDFDocument.IsCodeBlockOpen())
-                            ParseInlineElements(trimmedLine, numIndents);
-                        else
-                            //we add the line unparsed if there's a code block open
-                            m_wikiPDFDocument.AddTextToLastParagraph(line, false, numIndents);
+                        ParseTableLine(trimmedLine);
+                    }
+                    else
+                    {
+                        if (m_wikiPDFDocument.IsTableOpen())
+                        {
+                            m_wikiPDFDocument.CloseTable();
+                            inHeader = true;
+                        }
+                        SetParagraphTypeByLineStart(ref trimmedLine, numIndents);
+
+                        if (trimmedLine != null)
+                        {
+                            if (!m_wikiPDFDocument.IsCodeBlockOpen())
+                                ParseInlineElements(trimmedLine, numIndents);
+                            else
+                                //we add the line unparsed if there's a code block open
+                                m_wikiPDFDocument.AddTextToLastParagraph(line, false, numIndents);
+                        }
                     }
                 }
             }
-
+            if (m_wikiPDFDocument.IsTableOpen())
+            {
+                m_wikiPDFDocument.CloseTable();
+            }
             ConvertedPages.Add(markdownDocFilename);
             while (LinkedPages.Count > 0)
             {

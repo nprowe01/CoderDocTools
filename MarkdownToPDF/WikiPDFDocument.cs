@@ -139,7 +139,7 @@ namespace MarkdownToPDF
             }
         }
 
-        enum ParagraphType {Heading1, Heading2, Heading3, Heading4, Code, Image, Normal, List, Note};
+        enum ParagraphType {Heading1, Heading2, Heading3, Heading4, Code, Image, Normal, List, Note, Table};
         ParagraphType CurrentParagraphType;
 
         int m_numOpenLists = 0;
@@ -193,6 +193,45 @@ namespace MarkdownToPDF
         public bool IsCodeBlockOpen()
         {
             return CurrentParagraphType == ParagraphType.Code;
+        }
+        public bool IsTableOpen()
+        {
+            return CurrentParagraphType == ParagraphType.Table;
+        }
+        MigraDoc.DocumentObjectModel.Tables.Table table = null;
+        public void CloseTable()
+        {
+            table.Columns[table.Columns.Count - 1].Width = Unit.FromCentimeter(10);
+            table.Columns[table.Columns.Count - 1].Format.Alignment = ParagraphAlignment.Right;
+            table.Rows[0].Cells[table.Rows[0].Cells.Count - 1].Format.Alignment = ParagraphAlignment.Center;
+            CurrentParagraphType = ParagraphType.Normal;
+            table = null;
+        }
+        public void AddStringToTable(string cellText, bool newRow, int columnCount, bool inHeader)
+        {
+            if (table == null)
+            {
+                CurrentParagraphType = ParagraphType.Table;
+                table = m_document?.LastSection.AddTable();
+                table.Borders.Width = 0.75;
+                while (columnCount > 0)
+                {
+                    MigraDoc.DocumentObjectModel.Tables.Column column = table.AddColumn(Unit.FromCentimeter(2));
+                    column.Format.Alignment = ParagraphAlignment.Center;
+                    columnCount--;
+                }
+            }
+            if (newRow)
+            {
+                MigraDoc.DocumentObjectModel.Tables.Row row = table.AddRow();
+                if (inHeader)
+                {
+                    row.HeadingFormat = true;
+                }
+            }
+            MigraDoc.DocumentObjectModel.Tables.Row thisRow = table.Rows[table.Rows.Count - 1];
+            MigraDoc.DocumentObjectModel.Tables.Cell cell = thisRow.Cells[thisRow.Cells.Count];
+            cell.AddParagraph(cellText);
         }
 
         int m_lastSectionIndex = 0;
